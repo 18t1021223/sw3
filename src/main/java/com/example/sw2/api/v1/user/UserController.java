@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class UserController {
 
     private final List<UserDto> users;
 
+    @PreAuthorize(value = "hasAnyAuthority('ADMIN', 'SUB_ADMIN')")
     @Operation(description = "- TopDev việc làm IT hàng đầu\n" +
             "  - Cộng sự đắc lực hỗ trợ doanh nghiệp tuyển dụng\n" +
             "  - Người bạn đồng hành giúp các Developer tìm được công việc mơ ước")

@@ -1,6 +1,5 @@
 package com.example.sw2.configuration;
 
-import com.example.sw2.common.api.v1.response.DataResponse;
 import com.example.sw2.common.api.v1.response.ErrorRes;
 import io.swagger.v3.core.converter.AnnotatedType;
 import io.swagger.v3.core.converter.ModelConverters;
@@ -12,14 +11,20 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import lombok.var;
 import org.springdoc.core.GroupedOpenApi;
+import org.springdoc.core.customizers.ActuatorOperationCustomizer;
 import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.ObjectUtils;
+import org.springframework.web.method.HandlerMethod;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -44,6 +49,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("User")
 //                .pathsToMatch("/api/v1/users/**")
+                .addOperationCustomizer(new OperationNotesResourcesReader())
                 .packagesToScan("com.example.sw2.api.v1.user")
                 .addOpenApiCustomiser(globalOpenApiCustomer())
                 .build();
@@ -89,6 +95,37 @@ public class SwaggerConfig {
                 .content(new Content().addMediaType(APPLICATION_JSON_VALUE, new MediaType().schema(errorSchema.schema)))
                 .description(HttpStatus.INTERNAL_SERVER_ERROR.name())
         );
+    }
+
+    /**
+     * Display required role from {@link PreAuthorize}
+     */
+    private static class OperationNotesResourcesReader extends ActuatorOperationCustomizer {
+        @Override
+        public Operation customize(Operation operation, HandlerMethod handlerMethod) {
+            try {
+                var pre = handlerMethod.getMethod().getAnnotation(PreAuthorize.class);
+                operation.setDescription(String
+                        .format("***Required roles*** %s\n----\n%s", toRoles(pre.value()), operation.getDescription()));
+            } catch (Exception ignore) {
+            }
+            return super.customize(operation, handlerMethod);
+        }
+
+        private String toRoles(String s) {
+            try {
+                if (!ObjectUtils.isEmpty(s)) {
+                    return Arrays.stream(s.substring(s.indexOf("(") + 1, s.indexOf(")"))
+                                    .replace("'", "")
+                                    .split(","))
+                            .map(i -> "\n - " + i)
+                            .collect(Collectors.joining());
+                }
+            } catch (Exception e) {
+                return "";
+            }
+            return "";
+        }
     }
 
     public io.swagger.v3.oas.models.info.Info info() {
