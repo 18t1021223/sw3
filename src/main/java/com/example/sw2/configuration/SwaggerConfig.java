@@ -13,6 +13,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import lombok.var;
 import org.springdoc.core.GroupedOpenApi;
+import org.springdoc.core.SpringDocUtils;
 import org.springdoc.core.customizers.ActuatorOperationCustomizer;
 import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +23,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.method.HandlerMethod;
 
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,6 +48,22 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 //        }
 //)
 public class SwaggerConfig {
+
+    /**
+     * show parameter in UI
+     * @see {@link org.springdoc.api.annotations.ParameterObject}
+     * @see {@link org.springdoc.core.AbstractRequestService#PARAM_TYPES_TO_IGNORE}
+     * @see {@link org.springdoc.core.AbstractRequestService#ANNOTATIONS_FOR_REQUIRED}
+     * @see {@link org.springdoc.core.MethodParameterPojoExtractor#SIMPLE_TYPES}
+     * @see {@link org.springdoc.core.MethodParameterPojoExtractor#SIMPLE_TYPE_PREDICATES}
+     */
+    static {
+        SpringDocUtils.getConfig()
+                .addSimpleTypesForParameterObject(ZoneId.class, Year.class, YearMonth.class)
+                .removeRequestWrapperToIgnore(ZoneId.class);
+//        SpringDocUtils.getConfig().replaceWithClass(ZoneId.class,String.class);
+    }
+
     @Bean
     public GroupedOpenApi ApiUser() {
         return GroupedOpenApi.builder()
